@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 import streamlit as st
 import pandas as pd
 import folium
@@ -6,7 +7,7 @@ import requests
 from datetime import datetime
 from streamlit_gsheets import GSheetsConnection  
 
-# Masukkan link Google Sheet kamu yang sudah di-set "Editor" oleh "Anyone with link"
+
 url_gsheet = "https://docs.google.com/spreadsheets/d/1raP5WltsJnn4U7-Ydr3ubo2EAaYBB05wSr3mENr87jI"
 
 # Inisialisasi koneksi
@@ -35,14 +36,17 @@ def dapatkan_rute_jalan(start, end):
         return [[p[1], p[0]] for p in res['routes'][0]['geometry']['coordinates']]
     except:
         return [start, end]
-import requests # Pastikan baris ini ada di paling atas file app.py kamu!
+import requests 
 
 def simpan_ke_gsheets(asal, tujuan, status, jam):
-    # GANTI URL di bawah ini dengan URL "Aplikasi Web" yang kamu dapat dari Apps Script
-    url_script = "https://script.google.com/macros/s/AKfycbz6C_aEz4otIqbReLK7gueL74Lznl6-K0A3fLy3VGzVNC0CAH4UhYms4iFV0sXXnTU5/exec"
+    url_script = "https://script.google.com/macros/s/AKfyc bz6C_aEz4otiQbReLK7gueL74Lznl6-K0A3fLy3VGzVNCOCAH4UhYms4iFV0sXXnTU5/exec"
+    
+    # Setting Waktu ke WIB
+    waktu_wib = datetime.now() + timedelta(hours=7)
+    waktu_str = waktu_wib.strftime("%Y-%m-%d %H:%M:%S")
     
     payload = {
-        "waktu": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "waktu": waktu_str,
         "asal": asal,
         "tujuan": tujuan,
         "status": status,
@@ -50,13 +54,11 @@ def simpan_ke_gsheets(asal, tujuan, status, jam):
     }
     
     try:
-        # Mengirim data ke Google Sheets melalui Apps Script
         response = requests.post(url_script, json=payload)
         if "Sukses" in response.text:
             return True
         return False
     except Exception as e:
-        print(f"Error: {e}")
         return False
 
 # --- 3. SESSION STATE (PENYIMPANAN DATA) ---
