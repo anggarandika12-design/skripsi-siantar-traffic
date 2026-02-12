@@ -35,29 +35,28 @@ def dapatkan_rute_jalan(start, end):
         return [[p[1], p[0]] for p in res['routes'][0]['geometry']['coordinates']]
     except:
         return [start, end]
+import requests # Pastikan baris ini ada di paling atas file app.py kamu!
+
 def simpan_ke_gsheets(asal, tujuan, status, jam):
+    # GANTI URL di bawah ini dengan URL "Aplikasi Web" yang kamu dapat dari Apps Script
+    url_script = "https://script.google.com/macros/s/AKfycbz6C_aEz4otIqbReLK7gueL74Lznl6-K0A3fLy3VGzVNC0CAH4UhYms4iFV0sXXnTU5/exec"
+    
+    payload = {
+        "waktu": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "asal": asal,
+        "tujuan": tujuan,
+        "status": status,
+        "jam": jam
+    }
+    
     try:
-        # Mengambil data langsung dari koneksi rahasia (Secrets)
-        conn = st.connection("gsheets", type=GSheetsConnection)
-        df_lama = conn.read()
-        
-        new_row = pd.DataFrame([{
-            "Waktu_Akses": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "Titik_Asal": asal,
-            "Titik_Tujuan": tujuan,
-            "Status_Macet": status,
-            "Jam_Simulasi": jam
-        }])
-        
-        df_baru = pd.concat([df_lama, new_row], ignore_index=True)
-        conn.update(data=df_baru)
-        st.cache_data.clear()
-        return True
-    except Exception as e:
-        st.error(f"Koneksi Gagal: {e}")
+        # Mengirim data ke Google Sheets melalui Apps Script
+        response = requests.post(url_script, json=payload)
+        if "Sukses" in response.text:
+            return True
         return False
     except Exception as e:
-        st.error(f"Detail Error: {e}")
+        print(f"Error: {e}")
         return False
 
 # --- 3. SESSION STATE (PENYIMPANAN DATA) ---
