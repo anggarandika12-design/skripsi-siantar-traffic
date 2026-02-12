@@ -1,76 +1,87 @@
 import streamlit as st
-import pandas as pd
 import folium
 from streamlit_folium import st_folium
 import requests
 from datetime import datetime, timedelta
 
 # --- KONFIGURASI HALAMAN ---
-st.set_page_config(page_title="Simulasi Crowdsourcing Kemacetan", layout="wide")
+st.set_page_config(page_title="Crowdsourcing Pematangsiantar", layout="wide")
 
-# --- FUNGSI KIRIM DATA KE GOOGLE SHEETS ---
-def simpan_ke_gsheets(asal, tujuan, status, jam):
-    # Tempel URL Web App dari Apps Script kamu di sini
-    url_script = "https://script.google.com/macros/s/AKfycbygQ0eLqTYkztWAFnmFQkiGEE8wDSHYJ4Uooxz2m_ZJ-ovEkhGiHgVFA7V0v35ZDMqy/exec"
-    
-    # Setting Waktu ke WIB (UTC+7)
+# --- INISIALISASI STATE ---
+# Menyimpan koordinat klik agar tidak hilang saat aplikasi refresh
+if 'asal' not in st.session_state:
+    st.session_state.asal = None
+if 'tujuan' not in st.session_state:
+    st.session_state.tujuan = None
+
+# --- FUNGSI KIRIM DATA ---
+def simpan_ke_gsheets(asal, tujuan):
+    url_script = "https://script.google.com/macros/s/AKfycbz6C_aEz4otiQbReLK7gueL74Lznl6-K0A3fLy3VGzVNCOCAH4UhYms4iFV0sXXnTU5/exec"
     waktu_wib = datetime.now() + timedelta(hours=7)
-    waktu_str = waktu_wib.strftime("%Y-%m-%d %H:%M:%S")
     
     payload = {
-        "waktu": waktu_str,
-        "asal": asal,
-        "tujuan": tujuan,
-        "status": status,
-        "jam": jam
+        "waktu": waktu_wib.strftime("%Y-%m-%d %H:%M:%S"),
+        "asal": f"{asal[0]:.5f}, {asal[1]:.5f}", # Simpan koordinat Lat, Lng
+        "tujuan": f"{tujuan[0]:.5f}, {tujuan[1]:.5f}",
+        "status": "Dilaporkan via Peta",
+        "jam": waktu_wib.strftime("%H:%M")
     }
     
     try:
         response = requests.post(url_script, json=payload)
-        if "Sukses" in response.text:
-            return True
-        return False
-    except Exception as e:
-        st.error(f"Kesalahan Koneksi: {e}")
+        return "Sukses" in response.text
+    except:
         return False
 
 # --- UI APLIKASI ---
-st.title("🚗 Sistem Crowdsourcing Pelaporan Kemacetan")
-st.write("Gunakan formulir di bawah untuk melaporkan kondisi lalu lintas.")
+st.title("📍 Klik Peta untuk Lapor Kemacetan")
+st.write("Instruksi: **Klik 1** untuk Lokasi Sekarang, **Klik 2** untuk Tujuan.")
 
-col1, col2 = st.columns([2, 1])
+# Tombol Reset
+if st.button("🔄 Reset Pilihan"):
+    st.session_state.asal = None
+    st.session_state.tujuan = None
+    st.rerun()
 
-with col1:
-    st.subheader("Peta Wilayah")
-    # Contoh koordinat (silakan sesuaikan dengan titik wilayah skripsimu)
-    m = folium.Map(location=[-6.2088, 106.8456], zoom_start=12)
-    st_folium(m, width=700, height=450)
+# --- PETA INTERAKTIF ---
+# Fokus di Pematangsiantar
+m = folium.Map(location=[2.9560, 99.0600], zoom_start=14)
 
-with col2:
-    st.subheader("Formulir Laporan")
-    titik_asal = st.text_input("Titik Asal", placeholder="Contoh: Jl. Sudirman")
-    titik_tujuan = st.text_input("Titik Tujuan", placeholder="Contoh: Jl. Thamrin")
-    status_macet = st.selectbox("Status Kemacetan", ["Lancar", "Padat Merayap", "Macet Total"])
-    jam_simulasi = st.time_input("Jam Simulasi")
+# Tambahkan Marker jika sudah diklik
+if st.session_state.asal:
+    folium.Marker(st.session_state.asal, popup="Asal (1)", icon=folium.Icon(color='green')).add_to(m)
+if st.session_state.tujuan:
+    folium.Marker(st.session_state.tujuan, popup="Tujuan (2)", icon=folium.Icon(color='red')).add_to(m)
+    # Gambar garis penghubung
+    folium.PolyLine([st.session_state.asal, st.session_state.tujuan], color="blue", weight=3).add_to(m)
 
-    if st.button("🚀 Kirim Laporan Crowdsourcing"):
-        if titik_asal and titik_tujuan:
-            with st.spinner('Sedang mengirim data...'):
-                berhasil = simpan_ke_gsheets(
-                    titik_asal, 
-                    titik_tujuan, 
-                    status_macet, 
-                    str(jam_simulasi)
-                )
-                
-                if berhasil:
-                    st.success("✅ Data berhasil masuk ke Google Sheets!")
-                    st.balloons()
-                else:
-                    st.error("❌ Gagal mengirim. Pastikan Apps Script sudah di-deploy sebagai 'Anyone'.")
-        else:
-            st.warning("⚠️ Mohon isi titik asal dan tujuan terlebih dahulu.")
+# Tangkap input klik dari peta
+output = st_folium(m, width=1300, height=500)
 
-# --- FOOTER ---
-st.markdown("---")
-st.caption("Aplikasi Skripsi - Simulasi Crowdsourcing Lalu Lintas")
+# Logika menangkap koordinat klik
+if output['last_clicked']:
+    clicked_coords = (output['last_clicked']['lat'], output['last_clicked']['lng'])
+    
+    if st.session_state.asal is None:
+        st.session_state.asal = clicked_coords
+        st.rerun()
+    elif st.session_state.tujuan is None and clicked_coords != st.session_state.asal:
+        st.session_state.tujuan = clicked_coords
+        st.rerun()
+
+# --- PROSES PENGIRIMAN ---
+if st.session_state.asal and st.session_state.tujuan:
+    st.success(f"📍 Rute Terpilih: {st.session_state.asal} ke {st.session_state.tujuan}")
+    
+    if st.button("🚀 Kirim Laporan Rute Ini"):
+        with st.spinner('Mengirim ke Google Sheets...'):
+            if simpan_ke_gsheets(st.session_state.asal, st.session_state.tujuan):
+                st.balloons()
+                st.success("✅ Koordinat rute berhasil terkirim!")
+                # Reset setelah sukses
+                st.session_state.asal = None
+                st.session_state.tujuan = None
+            else:
+                st.error("❌ Gagal mengirim.")
+
+st.info("Koordinat yang dikirim ke Google Sheets berupa Latitude dan Longitude.")
