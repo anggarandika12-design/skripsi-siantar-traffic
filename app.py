@@ -4,6 +4,13 @@ import folium
 from streamlit_folium import st_folium
 import requests
 from datetime import datetime
+from streamlit_gsheets import GSheetsConnection  
+
+# Masukkan link Google Sheet kamu yang sudah di-set "Editor" oleh "Anyone with link"
+url_gsheet = "https://docs.google.com/spreadsheets/d/1raP5WltsJnn4U7-Ydr3ubo2EAaYBB05wSr3mENr87jI/edit?gid=0#gid=0"
+
+# Inisialisasi koneksi
+conn = st.connection("gsheets", type=GSheetsConnection)
 
 # --- 1. KONFIGURASI HALAMAN ---
 st.set_page_config(page_title="Sistem Deteksi Kemacetan", layout="wide")
@@ -28,6 +35,29 @@ def dapatkan_rute_jalan(start, end):
         return [[p[1], p[0]] for p in res['routes'][0]['geometry']['coordinates']]
     except:
         return [start, end]
+def simpan_ke_gsheets(asal, tujuan, status, jam):
+    try:
+        # Baca data yang ada sekarang
+        existing_data = conn.read(spreadsheet=url_gsheet)
+        
+        # Buat baris data baru
+        new_row = pd.DataFrame([{
+            "Waktu_Akses": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "Titik_Asal": asal,
+            "Titik_Tujuan": tujuan,
+            "Status_Macet": status,
+            "Jam_Simulasi": jam
+        }])
+        
+        # Gabungkan data lama dan baru
+        updated_df = pd.concat([existing_data, new_row], ignore_index=True)
+        
+        # Kirim kembali ke Google Sheets
+        conn.update(spreadsheet=url_gsheet, data=updated_df)
+        return True
+    except Exception as e:
+        st.error(f"Gagal menyimpan data: {e}")
+        return False
 
 # --- 3. SESSION STATE (PENYIMPANAN DATA) ---
 if 'clicks' not in st.session_state:
@@ -104,9 +134,18 @@ with col2:
         st.divider()
         st.write(f"**Hasil Deteksi Jam {jam_simulasi:02d}:00**")
         st.subheader(f":{warna}[{status}]")
-        st.caption(f"Keterangan: {info_crowd}")
+        if st.button("🚀 Kirim Laporan Crowdsourcing"):
+                sukses = simpan_ke_gsheets(
+                st.session_state.nama_lokasi[0],
+                st.session_state.nama_lokasi[1],
+                status,
+                jam_simulasi
+            )
+                if sukses:
+                    st.success("Laporan terkirim ke database!")
     else:
         st.info("Klik 2 titik lokasi di peta untuk memproses rute GPS.")
+        st.caption(f"Keterangan: {info_crowd}") 
 
 st.markdown("---")
 st.caption("Pematangsiantar - Sistem Deteksi Kemacetan Berbasis Crowdsourcing")
