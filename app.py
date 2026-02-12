@@ -37,10 +37,10 @@ def dapatkan_rute_jalan(start, end):
         return [start, end]
 def simpan_ke_gsheets(asal, tujuan, status, jam):
     try:
-        # Baca data yang ada sekarang
-        existing_data = conn.read(spreadsheet=url_gsheet)
+        # 1. Ambil data lama
+        df_lama = conn.read(spreadsheet=url_gsheet, usecols=[0,1,2,3,4])
         
-        # Buat baris data baru
+        # 2. Buat baris baru
         new_row = pd.DataFrame([{
             "Waktu_Akses": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "Titik_Asal": asal,
@@ -49,14 +49,15 @@ def simpan_ke_gsheets(asal, tujuan, status, jam):
             "Jam_Simulasi": jam
         }])
         
-        # Gabungkan data lama dan baru
-        updated_df = pd.concat([existing_data, new_row], ignore_index=True)
+        # 3. Gabungkan
+        df_baru = pd.concat([df_lama, new_row], ignore_index=True)
         
-        # Kirim kembali ke Google Sheets
-        conn.update(spreadsheet=url_gsheet, data=updated_df)
+        # 4. Kirim balik (Gunakan fungsi ini agar tidak minta Service Account)
+        conn.update(spreadsheet=url_gsheet, data=df_baru)
+        st.cache_data.clear() # Bersihkan cache agar data baru langsung kelihatan
         return True
     except Exception as e:
-        st.error(f"Gagal menyimpan data: {e}")
+        st.error(f"Detail Error: {e}")
         return False
 
 # --- 3. SESSION STATE (PENYIMPANAN DATA) ---
