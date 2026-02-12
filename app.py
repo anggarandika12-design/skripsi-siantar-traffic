@@ -7,7 +7,7 @@ from datetime import datetime
 from streamlit_gsheets import GSheetsConnection  
 
 # Masukkan link Google Sheet kamu yang sudah di-set "Editor" oleh "Anyone with link"
-url_gsheet = "https://docs.google.com/spreadsheets/d/1raP5WltsJnn4U7-Ydr3ubo2EAaYBB05wSr3mENr87jI/edit?gid=0#gid=0"
+url_gsheet = url_gsheet = "https://docs.google.com/spreadsheets/d/1raP5WltsJnn4U7-Ydr3ubo2EaAYBB05wSr3mENr87jI"
 
 # Inisialisasi koneksi
 conn = st.connection("gsheets", type=GSheetsConnection)
