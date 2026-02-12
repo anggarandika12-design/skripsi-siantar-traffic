@@ -11,7 +11,7 @@ st.set_page_config(page_title="Simulasi Crowdsourcing Kemacetan", layout="wide")
 # --- FUNGSI KIRIM DATA KE GOOGLE SHEETS ---
 def simpan_ke_gsheets(asal, tujuan, status, jam):
     # Tempel URL Web App dari Apps Script kamu di sini
-    url_script = "https://script.google.com/macros/s/AKfycbz6C_aEz4otiQbReLK7gueL74Lznl6-K0A3fLy3VGzVNCOCAH4UhYms4iFV0sXXnTU5/exec"
+    url_script = "https://script.google.com/macros/s/AKfycbygQ0eLqTYkztWAFnmFQkiGEE8wDSHYJ4Uooxz2m_ZJ-ovEkhGiHgVFA7V0v35ZDMqy/exec"
     
     # Setting Waktu ke WIB (UTC+7)
     waktu_wib = datetime.now() + timedelta(hours=7)
