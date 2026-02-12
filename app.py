@@ -1,17 +1,10 @@
-from datetime import datetime, timedelta
 import streamlit as st
 import pandas as pd
 import folium
 from streamlit_folium import st_folium
 import requests
-from datetime import datetime
-from streamlit_gsheets import GSheetsConnection  
+from datetime import datetime, timedelta  
 
-
-url_gsheet = "https://docs.google.com/spreadsheets/d/1raP5WltsJnn4U7-Ydr3ubo2EAaYBB05wSr3mENr87jI"
-
-# Inisialisasi koneksi
-conn = st.connection("gsheets", type=GSheetsConnection)
 
 # --- 1. KONFIGURASI HALAMAN ---
 st.set_page_config(page_title="Sistem Deteksi Kemacetan", layout="wide")
