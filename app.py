@@ -82,7 +82,7 @@ else:
 
 st.sidebar.subheader("Analisis Crowdsourcing")
 st.sidebar.write(f"**Data Status:** {info_crowd}")
-st.sidebar.metric("Status Jalur", status)
+st.sidebar.metric("Perkiraan Status Jalur", status)
 
 # --- 5. TAMPILAN UTAMA ---
 st.markdown("<h1 style='text-align: center;'>Sistem Deteksi Kemacetan</h1>", unsafe_allow_html=True)
@@ -149,3 +149,4 @@ with col2:
 
 st.markdown("---")
 st.caption("Pematangsiantar - Sistem Deteksi Kemacetan Berbasis Crowdsourcing")
+
